@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { fetchNewsForRelationship, NewsArticle } from "@/app/lib/newsService";
 
 interface SimpleNewsSectionProps {
@@ -17,7 +18,7 @@ export default function SimpleNewsSection({ title, query }: SimpleNewsSectionPro
     async function loadNews() {
       try {
         setLoading(true);
-        const newsData = await fetchNewsForRelationship(query);
+        const newsData = await fetchNewsForRelationship(`q=${encodeURIComponent(query)}`);
         
         if (newsData.status === "ok") {
           // Take only the first 3 articles for the collapsed view
@@ -38,7 +39,15 @@ export default function SimpleNewsSection({ title, query }: SimpleNewsSectionPro
   if (loading) {
     return (
       <div className="mt-4 p-4 bg-[#1B263B] rounded-lg">
-        <h4 className="font-medium mb-2">{title}</h4>
+        <div className="flex justify-between items-center mb-2">
+          <h4 className="font-medium">{title}</h4>
+          <Link 
+            href={`/news?relationship=${encodeURIComponent(title)}`}
+            className="text-xs text-blue-400 hover:text-blue-300"
+          >
+            Show All
+          </Link>
+        </div>
         <p className="text-gray-400 text-sm">Loading news...</p>
       </div>
     );
@@ -52,14 +61,22 @@ export default function SimpleNewsSection({ title, query }: SimpleNewsSectionPro
     <div className="mt-4 p-4 bg-[#1B263B] rounded-lg">
       <div className="flex justify-between items-center mb-2">
         <h4 className="font-medium">{title}</h4>
-        {articles.length > 1 && (
-          <button 
-            onClick={() => setExpanded(!expanded)}
+        <div className="flex gap-2">
+          {articles.length > 1 && (
+            <button 
+              onClick={() => setExpanded(!expanded)}
+              className="text-xs text-blue-400 hover:text-blue-300"
+            >
+              {expanded ? "Show Less" : "Show More"}
+            </button>
+          )}
+          <Link 
+            href={`/news?relationship=${encodeURIComponent(title)}`}
             className="text-xs text-blue-400 hover:text-blue-300"
           >
-            {expanded ? "Show Less" : "Show More"}
-          </button>
-        )}
+            Show All
+          </Link>
+        </div>
       </div>
       
       <ul className="space-y-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { fetchNewsForRelationship, NewsArticle } from "@/app/lib/newsService";
 import NewsCard from "@/app/components/NewsCard";
 
@@ -20,7 +21,7 @@ export default function NewsSection({ relationshipName }: NewsSectionProps) {
         // Create a search query from the relationship name
         // For example, "Bangladesh - China" becomes "Bangladesh China"
         const query = relationshipName.replace(/[-–]/g, " ").trim();
-        const newsData = await fetchNewsForRelationship(query);
+        const newsData = await fetchNewsForRelationship(`q=${encodeURIComponent(query)}`);
         
         if (newsData.status === "ok") {
           setArticles(newsData.articles);
@@ -43,7 +44,9 @@ export default function NewsSection({ relationshipName }: NewsSectionProps) {
   if (loading) {
     return (
       <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-4">Latest News</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Latest News</h3>
+        </div>
         <p className="text-gray-400">Loading news articles...</p>
       </div>
     );
@@ -52,7 +55,9 @@ export default function NewsSection({ relationshipName }: NewsSectionProps) {
   if (error) {
     return (
       <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-4">Latest News</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Latest News</h3>
+        </div>
         <p className="text-red-400">{error}</p>
       </div>
     );
@@ -61,7 +66,9 @@ export default function NewsSection({ relationshipName }: NewsSectionProps) {
   if (articles.length === 0) {
     return (
       <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-4">Latest News</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Latest News</h3>
+        </div>
         <p className="text-gray-400">No recent news articles found for this relationship.</p>
       </div>
     );
@@ -69,7 +76,15 @@ export default function NewsSection({ relationshipName }: NewsSectionProps) {
 
   return (
     <div className="mt-6">
-      <h3 className="text-xl font-semibold mb-4">Latest News</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold">Latest News</h3>
+        <Link 
+          href={`/news?relationship=${encodeURIComponent(relationshipName)}`}
+          className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+        >
+          Show All →
+        </Link>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {articles.map((article, index) => (
           <NewsCard key={`${article.url}-${index}`} article={article} />

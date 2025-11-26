@@ -21,11 +21,16 @@ export interface NewsResponse {
   articles: NewsArticle[];
 }
 
-export async function fetchNewsForRelationship(relationshipQuery: string): Promise<NewsResponse> {
+export async function fetchNewsForRelationship(queryParams: string): Promise<NewsResponse> {
   try {
-    const response = await fetch(
-      `https://newsapi.org/v2/everything?q=${encodeURIComponent(relationshipQuery)}&apiKey=${NEWS_API_KEY}&pageSize=5&sortBy=publishedAt`
-    );
+    // Check if we already have page parameter in the query
+    const hasPageParam = queryParams.includes('&page=');
+    const separator = queryParams.includes('?') ? '&' : (hasPageParam ? '' : '&');
+    const pageParam = hasPageParam ? '' : 'page=1';
+    
+    const fullQuery = `https://newsapi.org/v2/everything?${queryParams}${separator}${pageParam}&apiKey=${NEWS_API_KEY}&pageSize=12&sortBy=publishedAt`;
+    
+    const response = await fetch(fullQuery);
     
     if (!response.ok) {
       throw new Error(`News API request failed with status ${response.status}`);

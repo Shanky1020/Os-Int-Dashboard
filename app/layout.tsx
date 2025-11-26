@@ -16,7 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       
         <aside className="w-72 bg-[#1B263B] p-4">
           <h2 className="text-xl font-bold mb-4">OSINT Dashboard</h2>
-          <Link href="/" className="block py-2 hover:text-blue-400">Countries</Link>
+          <nav className="space-y-2">
+            <Link href="/" className="block py-2 hover:text-blue-400">Countries</Link>
+            <Link href="/news" className="block py-2 hover:text-blue-400">All News</Link>
+          </nav>
         </aside>
 
    
