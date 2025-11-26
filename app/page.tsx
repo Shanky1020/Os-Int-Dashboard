@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
+import SimpleNewsSection from "@/app/components/SimpleNewsSection";
 
 interface Data {
   id: number;
@@ -25,6 +26,9 @@ export default function Countries() {
 
   if (loading) return <p className="text-white">Loading...</p>;
 
+  // Get critical relationships (more than 15 events)
+  const criticalRelationships = data.filter((d) => d.events > 15);
+
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-6">Monitored Relationships</h1>
@@ -40,6 +44,22 @@ export default function Countries() {
           </div>
         </Link>
       ))}
+
+      {/* Show news for critical relationships */}
+      {criticalRelationships.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Critical Relationship News</h2>
+          <div className="space-y-4">
+            {criticalRelationships.map((relationship) => (
+              <SimpleNewsSection 
+                key={relationship.id}
+                title={relationship.name}
+                query={relationship.name.replace(/[-–]/g, " ").trim()}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ✅ THEN: Place Quick Statistics BELOW */}
       <div className="mt-10 bg-[#1B263B] p-6 rounded-lg">

@@ -2,22 +2,26 @@
 
 import { use, useEffect, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
+import NewsSection from "@/app/components/NewsSection";
 
 const tabs = ["Overview", "DIME", "Economic", "Impact", "Recommendations"];
+
 interface Country{
 name:string
 }
+
 interface Metric{
 id:number,
 metric:string,
 value:number
 }
+
 export default function CountryDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [activeTab, setActiveTab] = useState("Overview");
 
   const [metrics, setMetrics] = useState<Metric[]>([]);
- const [country, setCountry] = useState<Country | null>(null);
+  const [country, setCountry] = useState<Country | null>(null);
 
   useEffect(() => {
     async function loadDetails() {
@@ -61,16 +65,20 @@ export default function CountryDetail({ params }: { params: Promise<{ id: string
       </div>
 
       {activeTab === "Overview" && (
-        <div className="grid grid-cols-4 gap-4">
-          {metrics.map((metric) => (
-            <MetricBox key={metric.id} label={metric.metric} count={metric.value} />
-          ))}
-          
+        <div>
+          <div className="grid grid-cols-4 gap-4">
+            {metrics.map((metric) => (
+              <MetricBox key={metric.id} label={metric.metric} count={metric.value} />
+            ))}
+          </div>
+          {/* News Section for the relationship */}
+          <NewsSection relationshipName={country.name} />
         </div>
       )}
     </div>
   );
 }
+
 function MetricBox({ label, count }: { label: string; count: number }) {
   return (
     <div className="bg-[#1E293B] p-6 text-center rounded-lg">
