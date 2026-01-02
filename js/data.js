@@ -4,6 +4,10 @@
 
 const DataPage = {
   relationshipId: null,
+  currentPage: 1,
+  pageSize: 10,
+  totalRecords: 0,
+  totalPages: 0,
 
   init(data) {
     this.relationshipId = data.relationshipId;
@@ -28,7 +32,7 @@ const DataPage = {
     });
 
     this.loadRelationships();
-    this.loadTableData();
+    this.loadTableData(1);
   },
 
   async loadRelationships() {
@@ -51,8 +55,22 @@ const DataPage = {
     });
   },
 
-  async loadTableData() {
+  async loadTableData(page = 1) {
+    this.currentPage = page;
     try {
+      // First get total count
+      const { count, error: countError } = await SupabaseService.client
+        .from('country_monitored_relationships')
+        .select('*', { count: 'exact', head: true })
+        .eq('relationship_id', this.relationshipId);
+
+      if (countError) throw countError;
+      this.totalRecords = count || 0;
+      this.totalPages = Math.ceil(this.totalRecords / this.pageSize);
+
+      // Then get paginated data
+      const start = (page - 1) * this.pageSize;
+      const end = start + this.pageSize - 1;
       const { data, error } = await SupabaseService.client
         .from('country_monitored_relationships')
         .select(`
@@ -61,11 +79,14 @@ const DataPage = {
             name
           )
         `)
-        .order('created_at', { ascending: false });
+        .eq('relationship_id', this.relationshipId)
+        .range(start, end)
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
       this.tableData = data || [];
       this.displayTable();
+      this.displayPagination();
     } catch (error) {
       console.error('Error loading table data:', error);
       document.getElementById('data-table-body').innerHTML = '<tr><td colspan="12" class="text-center text-danger">Error loading data</td></tr>';
@@ -83,10 +104,11 @@ const DataPage = {
 
     this.tableData.forEach((row, index) => {
       const tr = document.createElement('tr');
-      const relationshipName = row.relationships ? row.relationships.name : 'N/A';
+      const relationshipName = row.relationship_id ? row.relationships.name : 'N/A';
+      const serialNumber = (this.currentPage - 1) * this.pageSize + index + 1;
       
       tr.innerHTML = `
-        <td>${index + 1}</td>
+        <td>${serialNumber}</td>
         <td>${relationshipName}</td>
         <td>${row.column_1 || ''}</td>
         <td>${row.column_2 || ''}</td>
@@ -94,8 +116,8 @@ const DataPage = {
         <td>${row.column_4 || ''}</td>
         <td>${row.column_5 || ''}</td>
         <td>${row.column_6 || ''}</td>
-        <td>${row.column_7 || ''}</td>
-        <td>${row.column_8 || ''}</td>
+        <td>${row.column_7 ? `<img src="${row.column_7}" alt="Image" style="width: 50px; height: 50px; cursor: pointer;" class="table-image">` : ''}</td>
+        <td>${row.column_8 ? `<a href="${row.column_8}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf"></i> View PDF</a>` : ''}</td>
         <td>${new Date(row.created_at).toLocaleString()}</td>
         <td>
           <button class="btn btn-sm btn-warning me-2 edit-btn" data-id="${row.id}" title="Edit">
@@ -123,6 +145,105 @@ const DataPage = {
         this.deleteRow(id);
       });
     });
+
+    // Add event listeners for table images
+    document.querySelectorAll('.table-image').forEach(img => {
+      img.addEventListener('click', (e) => {
+        this.openImageModal(e.target.src);
+      });
+    });
+
+    // Add modal event listeners
+    document.getElementById('imageModalClose').addEventListener('click', () => {
+      document.getElementById('imageModal').style.display = 'none';
+    });
+
+    document.getElementById('pdfModalClose').addEventListener('click', () => {
+      document.getElementById('pdfModal').style.display = 'none';
+    });
+
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('imageModal')) {
+        document.getElementById('imageModal').style.display = 'none';
+      }
+      if (e.target === document.getElementById('pdfModal')) {
+        document.getElementById('pdfModal').style.display = 'none';
+      }
+    });
+  },
+
+  displayPagination() {
+    const paginationDiv = document.getElementById('pagination-controls');
+    paginationDiv.innerHTML = '';
+
+    if (this.totalPages <= 1) return;
+
+    const ul = document.createElement('ul');
+    ul.className = 'pagination';
+
+    // Previous button
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${this.currentPage === 1 ? 'disabled' : ''}`;
+    const prevA = document.createElement('a');
+    prevA.className = 'page-link';
+    prevA.href = '#';
+    prevA.textContent = 'Previous';
+    prevA.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (this.currentPage > 1) {
+        this.loadTableData(this.currentPage - 1);
+      }
+    });
+    prevLi.appendChild(prevA);
+    ul.appendChild(prevLi);
+
+    // Page numbers
+    const startPage = Math.max(1, this.currentPage - 2);
+    const endPage = Math.min(this.totalPages, this.currentPage + 2);
+    for (let i = startPage; i <= endPage; i++) {
+      const li = document.createElement('li');
+      li.className = `page-item ${i === this.currentPage ? 'active' : ''}`;
+      const a = document.createElement('a');
+      a.className = 'page-link';
+      a.href = '#';
+      a.textContent = i;
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.loadTableData(i);
+      });
+      li.appendChild(a);
+      ul.appendChild(li);
+    }
+
+    // Next button
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${this.currentPage === this.totalPages ? 'disabled' : ''}`;
+    const nextA = document.createElement('a');
+    nextA.className = 'page-link';
+    nextA.href = '#';
+    nextA.textContent = 'Next';
+    nextA.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (this.currentPage < this.totalPages) {
+        this.loadTableData(this.currentPage + 1);
+      }
+    });
+    nextLi.appendChild(nextA);
+    ul.appendChild(nextLi);
+
+    paginationDiv.appendChild(ul);
+  },
+
+  openImageModal(src) {
+    // Remove any existing Bootstrap modal backdrops
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('imageModalContent');
+    const caption = document.getElementById('imageModalCaption');
+    modal.style.display = 'block';
+    modalImg.src = src;
+    caption.innerHTML = 'Image Preview';
   },
 
   openEditModal(rowId = null) {
@@ -142,14 +263,19 @@ const DataPage = {
         document.getElementById('edit-column-4').value = row.column_4 || '';
         document.getElementById('edit-column-5').value = row.column_5 || '';
         document.getElementById('edit-column-6').value = row.column_6 || '';
-        document.getElementById('edit-column-7').value = row.column_7 || '';
-        document.getElementById('edit-column-8').value = row.column_8 || '';
+        // For files, show current
+        const currentImageDiv = document.getElementById('current-image-7');
+        currentImageDiv.innerHTML = row.column_7 ? `<img src="${row.column_7}" style="width: 100px; height: 100px;">` : '';
+        const currentPdfDiv = document.getElementById('current-pdf-8');
+        currentPdfDiv.innerHTML = row.column_8 ? `<a href="${row.column_8}" target="_blank">View Current PDF</a>` : '';
       }
     } else {
       modalTitle.textContent = 'Add New Row';
       // Clear form for new row and pre-select current relationship
       document.getElementById('edit-form').reset();
       document.getElementById('edit-relationship-id').value = this.relationshipId;
+      document.getElementById('current-image-7').innerHTML = '';
+      document.getElementById('current-pdf-8').innerHTML = '';
     }
     
     modal.show();
@@ -165,11 +291,23 @@ const DataPage = {
       column_4: document.getElementById('edit-column-4').value,
       column_5: document.getElementById('edit-column-5').value,
       column_6: document.getElementById('edit-column-6').value,
-      column_7: document.getElementById('edit-column-7').value,
-      column_8: document.getElementById('edit-column-8').value,
     };
 
+    // Handle file uploads
+    const imageFile = document.getElementById('edit-column-7').files[0];
+    const pdfFile = document.getElementById('edit-column-8').files[0];
+
     try {
+      if (imageFile) {
+        const imageData = await this.readFileAsDataURL(imageFile);
+        data.column_7 = imageData;
+      }
+
+      if (pdfFile) {
+        const pdfData = await this.readFileAsDataURL(pdfFile);
+        data.column_8 = pdfData;
+      }
+
       if (id) {
         // Update
         const { error } = await SupabaseService.client
@@ -188,7 +326,7 @@ const DataPage = {
       // Close modal and reload data
       const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
       modal.hide();
-      this.loadTableData();
+      this.loadTableData(this.currentPage);
     } catch (error) {
       console.error('Error saving:', error);
       await Swal.fire({
@@ -199,6 +337,15 @@ const DataPage = {
         color: '#ffffff'
       });
     }
+  },
+
+  readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   },
 
   async deleteRow(id) {
@@ -234,7 +381,7 @@ const DataPage = {
         showConfirmButton: false
       });
       
-      this.loadTableData();
+      this.loadTableData(this.currentPage);
     } catch (error) {
       console.error('Error deleting:', error);
       await Swal.fire({
@@ -265,7 +412,7 @@ const DataPage = {
 
     // Prepare data for export
     const exportData = this.tableData.map((row, index) => {
-      const relationshipName = row.relationships ? (row.relationships.name) : 'N/A';
+      const relationshipName = row.relationship_id ? (row.relationships.name) : 'N/A';
       return {
         'S.No': index + 1,
         'Relationship': relationshipName,

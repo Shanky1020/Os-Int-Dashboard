@@ -39,6 +39,9 @@
         </tbody>
       </table>
     </div>
+    <div class="d-flex justify-content-center mt-3" id="pagination-controls">
+      <!-- Pagination will be populated here -->
+    </div>
   </div>
 
   <!-- Edit Modal -->
@@ -103,14 +106,16 @@
             <div class="row">
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label for="edit-column-7" class="form-label">Column 7</label>
-                  <input type="text" id="edit-column-7" class="form-control">
+                  <label for="edit-column-7" class="form-label">Column 7 (Image)</label>
+                  <input type="file" id="edit-column-7" class="form-control" accept="image/*">
+                  <div id="current-image-7" class="mt-2"></div>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label for="edit-column-8" class="form-label">Column 8</label>
-                  <input type="text" id="edit-column-8" class="form-control">
+                  <label for="edit-column-8" class="form-label">Column 8 (PDF)</label>
+                  <input type="file" id="edit-column-8" class="form-control" accept=".pdf">
+                  <div id="current-pdf-8" class="mt-2"></div>
                 </div>
               </div>
             </div>
@@ -123,4 +128,17 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="custom-modal">
+  <span class="close" id="imageModalClose">&times;</span>
+  <img class="modal-content" id="imageModalContent">
+  <div id="imageModalCaption"></div>
+</div>
+
+<!-- PDF Modal -->
+<div id="pdfModal" class="custom-modal">
+  <span class="close" id="pdfModalClose">&times;</span>
+  <iframe id="pdfModalContent" style="width: 100%; height: 80vh;"></iframe>
 </div>
