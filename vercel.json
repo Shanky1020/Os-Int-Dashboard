@@ -1,0 +1,9 @@
+{
+  "framework": null,
+  "routes": [
+    { "src": "^/$", "dest": "/index.html" },
+    { "src": "^/home$", "dest": "/pages/home.html" },
+    { "src": "^/news$", "dest": "/pages/news.html" },
+    { "src": "^/detail$", "dest": "/pages/detail.html" }
+  ]
+}
