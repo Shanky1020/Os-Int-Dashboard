@@ -2,8 +2,7 @@
 const NewsService = {
   async fetchNews(queryParams) {
     try {
-      const { NEWS_API } = window.CONFIG;
-      const url = `${NEWS_API.BASE_URL}/everything?${queryParams}&apiKey=${NEWS_API.KEY}&pageSize=${NEWS_API.PAGE_SIZE}&sortBy=publishedAt`;
+      const url = `/api/news?${queryParams}`;
       
       const response = await fetch(url);
       
@@ -33,7 +32,7 @@ const NewsService = {
   },
 
   async fetchDefaultNews(page = 1) {
-    return this.fetchNews(`q=international+relations+diplomacy&page=${page}`);
+    return this.fetchNews(`page=${page}`);
   }
 };
 
